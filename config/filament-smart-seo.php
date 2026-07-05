@@ -31,6 +31,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | AI Autofill button
+    |--------------------------------------------------------------------------
+    |
+    | When false, the header "AI Autofill" action is hidden globally. Use
+    | SeoSection::withoutAiAutofill() to disable it for a single section.
+    |
+    */
+
+    'ai_autofill_enabled' => (bool) env('FILAMENT_SMART_SEO_AI_AUTOFILL_ENABLED', true),
+
+    /*
+    |--------------------------------------------------------------------------
     | Classic SEO length limits
     |--------------------------------------------------------------------------
     |

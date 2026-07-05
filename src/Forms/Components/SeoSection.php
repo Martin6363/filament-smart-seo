@@ -57,6 +57,8 @@ class SeoSection extends Section
 
     protected bool | Closure $mobileOgPreview = false;
 
+    protected bool | Closure | null $aiAutofill = null;
+
     /**
      * @param  string | array<Component | Action> | Htmlable | Closure | null  $heading
      */
@@ -105,6 +107,7 @@ class SeoSection extends Section
                 ->icon(Heroicon::OutlinedSparkles)
                 ->color('primary')
                 ->tooltip(__('filament-smart-seo::actions.generate.tooltip'))
+                ->visible(fn (SeoSection $component): bool => $component->hasAiAutofill())
                 ->action(function (SeoSection $component, Get $get, Set $set): void {
                     $component->runGenerationWithButton($get, $set);
                 }),
@@ -212,6 +215,35 @@ class SeoSection extends Section
     public function hasMobileOgPreview(): bool
     {
         return (bool) $this->evaluate($this->mobileOgPreview);
+    }
+
+    /**
+     * Show the header AI Autofill action. Defaults to config `ai_autofill_enabled`.
+     */
+    public function withAiAutofill(bool | Closure $condition = true): static
+    {
+        $this->aiAutofill = $condition;
+
+        return $this;
+    }
+
+    /**
+     * Hide the header AI Autofill action for manual-only SEO editing.
+     */
+    public function withoutAiAutofill(bool | Closure $condition = true): static
+    {
+        $this->aiAutofill = fn (SeoSection $component): bool => ! $component->evaluate($condition);
+
+        return $this;
+    }
+
+    public function hasAiAutofill(): bool
+    {
+        if ($this->aiAutofill !== null) {
+            return (bool) $this->evaluate($this->aiAutofill);
+        }
+
+        return (bool) config('filament-smart-seo.ai_autofill_enabled', true);
     }
 
     /**

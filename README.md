@@ -89,13 +89,15 @@ Add the `HasSeo` trait to any Eloquent model that should own SEO metadata (see [
 ```dotenv
 GEMINI_API_KEY=your-google-ai-studio-api-key
 FILAMENT_SMART_SEO_GEMINI_MODEL=gemini-2.5-flash
+FILAMENT_SMART_SEO_AI_AUTOFILL_ENABLED=true
 FILAMENT_SMART_SEO_OG_DISK=public
 ```
 
 | Variable | Purpose |
 |----------|---------|
-| `GEMINI_API_KEY` | Google AI Studio API key. Required for AI autofill. |
+| `GEMINI_API_KEY` | Google AI Studio API key. Required only when AI Autofill is enabled and used. |
 | `FILAMENT_SMART_SEO_GEMINI_MODEL` | Primary Gemini model name. Fallback models are tried automatically on quota errors. |
+| `FILAMENT_SMART_SEO_AI_AUTOFILL_ENABLED` | When `false`, hides the **AI Autofill** header button globally. Default: `true`. |
 | `FILAMENT_SMART_SEO_OG_DISK` | Filesystem disk used for OG image uploads. Default: `public`. |
 
 ---
@@ -109,6 +111,7 @@ return [
     'available_locales' => ['en', 'ru'],
     'api_key' => env('GEMINI_API_KEY'),
     'gemini_model' => 'gemini-2.5-flash',
+    'ai_autofill_enabled' => true,
     'max_title_length' => 60,
     'max_description_length' => 160,
     'preview_base_url' => env('APP_URL'),
@@ -123,6 +126,8 @@ return [
 | Key | Purpose |
 |-----|---------|
 | `available_locales` | Default locales for `translatable()` and `localeSuffixed()` tab layouts. |
+| `api_key` / `gemini_model` | Gemini credentials and model. Used only when AI Autofill is enabled. |
+| `ai_autofill_enabled` | Show or hide the **AI Autofill** header button globally. |
 | `max_title_length` / `max_description_length` | Length limits used by Gemini and the SERP counter badges. |
 | `preview_base_url` | Default URL shown in the Google preview breadcrumb when `previewUrl()` is not set. |
 | `preview_fallback_title` / `preview_fallback_description` | Placeholder text in previews when SEO fields are empty. |
@@ -164,7 +169,35 @@ SeoSection::make()
     ->sourceDescriptionField('content');
 ```
 
-Click **AI Autofill** in the section header to generate SEO from the mapped source fields. Generation is always triggered manually through this button. The Google SERP preview updates live as you type or edit the SEO fields.
+Click **AI Autofill** in the section header to generate SEO from the mapped source fields (when AI is enabled). The Google SERP preview updates live as you type or edit the SEO fields.
+
+### Manual-only SEO (without AI)
+
+You can use the plugin purely for SEO fields, previews, and storage without Gemini:
+
+**Globally** — hide the AI button for every `SeoSection`:
+
+```dotenv
+FILAMENT_SMART_SEO_AI_AUTOFILL_ENABLED=false
+```
+
+Or in config:
+
+```php
+'ai_autofill_enabled' => false,
+```
+
+**Per section** — override the global setting:
+
+```php
+SeoSection::make()
+    ->withoutAiAutofill()
+    ->localeSuffixed()
+    ->locales(['en', 'ru'])
+    ->previewUrl(url('/vehicles'));
+```
+
+When AI is disabled, `sourceTitleField()` and `sourceDescriptionField()` are not required. `GEMINI_API_KEY` is not needed.
 
 ---
 
@@ -351,8 +384,10 @@ Pass a closure for conditional display.
 
 | Method | Description |
 |--------|-------------|
-| `sourceTitleField('title')` | Form field used as the SEO title source. Base name; suffixed per locale in `localeSuffixed()` mode. |
-| `sourceDescriptionField('content')` | Form field used as the SEO description or body source. |
+| `sourceTitleField('title')` | Form field used as the SEO title source. Base name; suffixed per locale in `localeSuffixed()` mode. Required for AI Autofill. |
+| `sourceDescriptionField('content')` | Form field used as the SEO description or body source. Required for AI Autofill. |
+| `withAiAutofill()` | Show the header **AI Autofill** button. Default follows `ai_autofill_enabled` config. |
+| `withoutAiAutofill()` | Hide the header **AI Autofill** button for manual-only SEO editing. |
 | `translatable()` | Enable per-locale SEO tabs for Spatie JSON parent fields. AI autofill targets the active SEO tab only. |
 | `localeSuffixed()` | Enable per-locale SEO tabs when parent source fields use `field_locale` columns. AI autofill runs for all configured locales. |
 | `locales(['en', 'ru'])` | Override `available_locales` for this section. |
